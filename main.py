@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from starlette import status
+from starlette.responses import Response
 
 app = FastAPI()
 
@@ -10,6 +11,10 @@ app = FastAPI()
 class TaskCreate(BaseModel):
   title: str
   description: Optional[str] = None
+
+class TaskUpdate(BaseModel):
+    title: str
+    done:Optional[bool]
 
 tasks_db =[
 
@@ -62,3 +67,31 @@ async def create_new_task(task_payload: TaskCreate):
 
     tasks_db.append(new_task)
     return new_task
+
+@app.put("/tasks/{task_id}")
+async def update_tasks(task_id:int, task_payload:TaskUpdate):
+    for task in tasks_db:
+        if task["id"] == task_id:
+
+            if task_payload.title is not None:
+                if not task_payload.title.strip():
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "Validation ERROR : title cannot be empty or blank space")
+        task["title"] = task_payload.title.strip()
+
+        if task_payload.done is not None:
+            task["done"] = task_payload.done
+        return task
+
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
+
+
+
+@app.delete("/tasks{task_id" , status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(task_id:int):
+
+    for index , task in enumerate(tasks_db):
+        if task["id"] == task_id:
+            tasks_db.pop(index)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
