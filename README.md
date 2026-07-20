@@ -1,0 +1,72 @@
+# 📝 FastAPI In-Memory To-Do CRUD API (BE-01)
+
+A clean, production-grade asynchronous RESTful API for managing a task list built with **Python** and **FastAPI**. Designed adhering strictly to REST principles, type safety with Pydantic, explicit HTTP status codes, and comprehensive validation.
+
+---
+
+## 🛠️ Key Features
+- **Full CRUD Operations**: Create, Read (All & Single), Update, and Delete tasks.
+- **In-Memory Storage**: Fast execution without database dependencies for baseline REST benchmarking.
+- **Strict Input Validation**: Utilizes **Pydantic** models to catch empty/blank inputs and return proper `400 Bad Request` status codes.
+- **Standardized REST Status Codes**: Explicit `200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, and `404 Not Found`.
+- **Interactive Documentation**: Auto-generated Swagger UI and ReDoc documentation.
+
+---
+
+## 🚀 How to Install & Run
+
+Follow these steps to run the API locally on your machine:
+
+### 1. Clone the Repository
+
+
+```bash
+git clone <YOUR-GITHUB-REPO-URL>
+cd <YOUR-REPO-FOLDER>
+```
+
+# 1.Install dependencies:
+Bash
+pip install fastapi uvicorn pydantic
+
+# 2.Run the server:
+
+Bash
+uvicorn main:app --reload
+The server will start at http://127.0.0.1:8000
+
+
+# ## 📡 API Endpoints Reference
+
+| Method | Endpoint | Description | Request Body | Success Status | Error Status |
+
+| `GET` | `/` | API Metadata & available endpoints | None | `200 OK` | - |
+| `GET` | `/health` | Server health check endpoint | None | `200 OK` | - |
+| `GET` | `/tasks` | Retrieve list of all tasks | None | `200 OK` | - |
+| `GET` | `/tasks/{id}` | Retrieve a single task by ID | None | `200 OK` | `404 Not Found` |
+| `POST` | `/tasks` | Create a new task | `{"title": "str"}` | `201 Created` | `400 Bad Request` |
+| `PUT` | `/tasks/{id}` | Update task title and/or done status | `{"title": "str", "done": bool}` | `200 OK` | `400 Bad Request` / `404 Not Found` |
+| `DELETE` | `/tasks/{id}` | Remove a task permanently | None | `204 No Content` | `404 Not Found` |
+
+
+🧪 Sample Terminal Verification (curl -i)
+Bash
+# Creating a new task
+curl -i -X POST [http://127.0.0.1:8000/tasks](http://127.0.0.1:8000/tasks) -H "Content-Type: application/json" -d "{\"title\": \"Deploy to Production\"}"
+
+# Output Response:
+# HTTP/1.1 201 Created
+# content-type: application/json
+# {"id": 4, "title": "Deploy to Production", "done": false}
+
+
+## 📸 Interactive Documentation (Swagger UI)
+
+FastAPI automatically generates interactive API documentation powered by Swagger UI. 
+
+1. Ensure the API server is running locally (`uvicorn main:app --reload`).
+2. Open your browser and navigate to: **`http://127.0.0.1:8000/docs`**
+3. Test all CRUD operations interactively using the **"Try it out"** feature.
+
+![FastAPI Swagger UI Screenshot](./swagger.png)
+
