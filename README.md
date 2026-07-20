@@ -70,3 +70,15 @@ FastAPI automatically generates interactive API documentation powered by Swagger
 
 ![FastAPI Swagger UI Screenshot](./swagger.png)
 
+
+---
+
+## 🤖 Stage 7: AI Rematch (AI vs Me)
+
+### Prompt Used:
+> *"Write a FastAPI in-memory CRUD API for a To-Do list with endpoints for GET /tasks, GET /tasks/{id}, POST /tasks, PUT /tasks/{id}, and DELETE /tasks/{id}. Ensure 404 for missing IDs, 400 for empty titles, 201 for post, and 204 for delete."*
+
+### Comparison Highlights:
+1. **What the AI did better:** Generated boilerplate code faster and provided built-in type annotations quickly.
+2. **What the AI got wrong:** The AI returned a `200 OK` status with a JSON message for `DELETE` operations instead of returning an explicit `204 No Content` with an empty body as required by REST standards.
+3. **What my prompt forgot:** I initially forgot to specify stripping whitespace from inputs (`.strip()`), which allowed blank string titles to bypass validation in the AI's version until corrected.
