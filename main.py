@@ -62,6 +62,13 @@ class TaskUpdate(BaseModel):
     title: str = Field(...,min_length=1, description="Updated task title")
     done:bool
 
+class TaskResponse(BaseModel):
+    id: int
+    title: str
+    done: bool
+
+
+
 @app.get("/" , tags=["Metadata"])
 def get_api_root():
     return {"name" : "SQlite To-Do API" ,
@@ -76,19 +83,33 @@ def health_check():
 
 
 
-@app.get("/tasks")
-async def get_tasks():
-    return tasks_db
+@app.get("/tasks", response_model= list[TaskResponse], tags=["Tasks"])
+def get_all_tasks():
+  conn = get_db_connection()
+  cursor = conn.cursor()
 
+  cursor.execute("SELECT id , title , done FROM tasks")
+  row = cursor.fetchall()
+  conn.close()
 
-@app.get("/tasks/{task_id}")
-async def get_single_task(task_id: int):
+  return [
+      {"id":row["id"], "title":row["title"], "done":bool(row["done"])}
+      for row in row      
+  ]
 
-  for task in tasks_db:
-      if task["id"] == task_id:
-          return task
+@app.get("/tasks/{task_id}" , response_model=TaskResponse, tags=["Tasks"])
+def get_single_task(task_id: int):
+  conn = get_db_connection()
+  cursor = conn.cursor()
 
-  raise HTTPException(status_code=404, detail="Task not found")
+  cursor.execute("SELECT id , title , done FROM tasks WHERE id = ?", (task_id,))
+  row = cursor.fetchone()
+  conn.close()
+
+  if row is None:
+   raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
+
+  return {"id":row["id"], "title":row["title"], "done":bool(row["done"])}
 
 
 @app.post("/tasks" , status_code=status.HTTP_201_CREATED)
