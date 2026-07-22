@@ -82,3 +82,25 @@ FastAPI automatically generates interactive API documentation powered by Swagger
 1. **What the AI did better:** Generated boilerplate code faster and provided built-in type annotations quickly.
 2. **What the AI got wrong:** The AI returned a `200 OK` status with a JSON message for `DELETE` operations instead of returning an explicit `204 No Content` with an empty body as required by REST standards.
 3. **What my prompt forgot:** I initially forgot to specify stripping whitespace from inputs (`.strip()`), which allowed blank string titles to bypass validation in the AI's version until corrected.
+
+
+---
+
+## 🗄️ Database Architecture & Persistence (SQLite)
+
+### Why SQLite?
+- **Zero-Configuration**: Serverless database contained within a single standalone file (`tasks.db`).
+- **Data Persistence**: Solves the in-memory limitation by saving records permanently to disk across server restarts.
+- **Auto-Initialization**: Database schema and tables are created automatically on application startup if missing.
+
+### Database Location & Configuration
+- **File Location**: `./tasks.db` (Ignored by `.gitignore` to keep user environments clean).
+- **Run Command**: 
+  ```bash
+  uvicorn main:app --reload 
+
+---
+Manual SQL Query Execution (Stage 4)
+Executed via DB Browser for SQLite to inspect active tasks:
+
+#  SELECT * FROM tasks WHERE done = 0;
