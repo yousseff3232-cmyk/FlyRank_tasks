@@ -112,25 +112,26 @@ def get_single_task(task_id: int):
   return {"id":row["id"], "title":row["title"], "done":bool(row["done"])}
 
 
-@app.post("/tasks" , status_code=status.HTTP_201_CREATED)
-async def create_new_task(task_payload: TaskCreate):
+@app.post("/tasks" , response_model=TaskResponse , status_code=status.HTTP_201_CREATED, tags=["Tasks"])
+def create_new_task(task_in: TaskCreate):
 
-    if not task_payload.title.strip():
+    clean_title = task_in.title.strip()
+    if not clean_title:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="VALIDATION ERROR :Title must not be empty or blank space")
+    conn= get_db_connection()
+    cursor = conn.cursor()
 
 
-    new_id = max(task["id"] for task in tasks_db)+1 if tasks_db else 1
-    new_task= {
-        "id":new_id,
-        "title":task_payload.title.strip(),
-        "done":False
+    cursor.execute("INSERT INTO tasks (title, done) VALUES (?,?)", (clean_title,0))
+    conn.commit()
 
-}
+    new_id = cursor.lastrowid
+    conn.close()
+
+    return {"id": new_id, "title":clean_title, "done":False}
 
 
-    tasks_db.append(new_task)
-    return new_task
-
+   
 @app.put("/tasks/{task_id}")
 async def update_tasks(task_id:int, task_payload:TaskUpdate):
     for task in tasks_db:
