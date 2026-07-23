@@ -104,3 +104,17 @@ Manual SQL Query Execution (Stage 4)
 Executed via DB Browser for SQLite to inspect active tasks:
 
 #  SELECT * FROM tasks WHERE done = 0;
+
+
+
+---
+
+## 🤖 Stage 6: AI Rematch (AI vs Me)
+
+### Prompt Used:
+> "Write a FastAPI REST API for a To-Do list backed by SQLite using python's built-in sqlite3 library. Create a tasks table automatically on startup with columns id, title, and done. Seed three example tasks if the table is empty. Implement endpoints for GET /tasks, GET /tasks/{id}, POST /tasks, PUT /tasks/{id}, and DELETE /tasks/{id}. Ensure 404 for missing IDs, 400 for empty titles, 201 for post, and 204 for delete. Use parameterized queries for safety."
+
+### Comparison Summary:
+1. **What the AI did better:** Automatically generated type-hinting decorators and structured connection contexts cleanly.
+2. **What the AI got wrong:** The AI forgot to use explicit `status.HTTP_204_NO_CONTENT` for the `DELETE` endpoint and initially returned a `200 OK` with a JSON payload instead.
+3. **What my prompt forgot:** I forgot to specify handling whitespace-only inputs (`.strip()`), which allowed empty string spaces to pass as valid titles in the AI's version.

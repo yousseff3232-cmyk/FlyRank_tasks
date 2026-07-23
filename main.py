@@ -154,7 +154,7 @@ def update_tasks(task_id:int, task_in:TaskUpdate):
     return {"id":task_id , "title":clean_title, "done":done_int}
 
 
-@app.delete("/tasks{task_id" , status_code=status.HTTP_204_NO_CONTENT, tags=["Tasks"])
+@app.delete("/tasks{task_id}" , status_code=status.HTTP_204_NO_CONTENT, tags=["Tasks"])
 def delete_task(task_id:int):
   conn = get_db_connection()
   cursor = conn.cursor()
