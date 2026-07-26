@@ -140,3 +140,16 @@ RESTful Contract Unchanged: Full CRUD functionality maintained with strict HTTP 
 ## Verification
 
 curl -i http://localhost:8000/tasks
+
+
+---
+
+## 🤖 Stage 6: AI Rematch (AI vs Me)
+
+### Prompt Used:
+> "Write a production-ready FastAPI REST API for a To-Do list application backed by PostgreSQL running in Docker Compose. Use psycopg (v3) driver, read DATABASE_URL from .env, create tasks table on startup, seed 3 tasks if empty, implement 5 CRUD endpoints with explicit status codes (200, 201, 204, 400, 404), parameterized queries (%s), Dockerfile, and docker compose with a named volume."
+
+### Comparison Summary:
+1. **What the AI did better:** Automatically included structured connection pool options and clean healthcheck endpoints.
+2. **What the AI got wrong:** Omitted explicit string stripping (`.strip()`) for whitespace validation and initially returned 200 OK instead of 204 No Content for DELETE.
+3. **What my prompt forgot:** I forgot to specify the explicit container name and logging verbosity settings in Docker Compose.
