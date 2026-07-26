@@ -1,9 +1,7 @@
 import os
-from itertools import count
-
 import psycopg
 from psycopg.rows import dict_row
-from typing import List
+from contextlib import asynccontextmanager
 from fastapi import FastAPI , HTTPException , status, Response
 from pydantic import BaseModel ,Field
 from dotenv import load_dotenv
@@ -14,7 +12,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:dev@localhost:54
 
 
 
-app = FastAPI(title= "Task API - Containerized Postgres Edition " ,description= "A production-grade RESTFul API connected to postgreSQL database in Docker ", version= "3.0" )
+app = FastAPI(title= "Task API - Containerized Postgres Edition " ,description= "A production-grade RESTFul API connected to postgres SQL database in Docker ", version= "3.0" )
 
 
 
@@ -49,11 +47,11 @@ def init_db():
             cursor.executemany("INSERT INTO tasks (title, done) VALUES (%s,%s);", initial_task)
         conn.commit()
 
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan( _app :FastAPI):
+
     init_db()
-
-
+    yield
 
 
 class TaskCreate(BaseModel):
@@ -112,18 +110,14 @@ def create_new_task(task_in: TaskCreate):
     clean_title = task_in.title.strip()
     if not clean_title:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="VALIDATION ERROR :Title must not be empty or blank space")
-    conn= get_db_connection()
-    cursor = conn.cursor()
 
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+           cursor.execute("INSERT INTO tasks (title, done) VALUES (%s,%s) RETURNING id , title , done ;", (clean_title,False) )
 
-    cursor.execute("INSERT INTO tasks (title, done) VALUES (?,?)", (clean_title,0))
-    conn.commit()
-
-    new_id = cursor.lastrowid
-    conn.close()
-
-    return {"id": new_id, "title":clean_title, "done":False}
-
+        new_task = cursor.fetchone()
+        conn.commit()
+        return new_task
 
 
 @app.put("/tasks/{task_id}" , response_model=TaskResponse , tags=["Tasks"])
@@ -132,35 +126,48 @@ def update_tasks(task_id:int, task_in:TaskUpdate):
     if not clean_title:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail="VALIDATION ERROR :Title must not be empty or blank space")
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("UPDATE task SET title = %s WHERE id  = %S RETURNING id , title , done ;", (clean_title, task_in.done ,task_id))
+            updated_task = cursor.fetchone()
 
-    cursor.execute("SELECT id FROM tasks WHERE id = ?", (task_id,))
-    if cursor.fetchone() is None:
-       conn.close()
-       raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
+            if updated_task is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
+            conn.commit()
+            return updated_task
 
-    done_int = 1 if task_in.done else 0
-    cursor.execute("UPDATE tasks SET title= ? , done=? ,WHERE id = ?", (clean_title,done_int,task_id))
-    conn.commit()
-    conn.close()
 
-    return {"id":task_id , "title":clean_title, "done":done_int}
 
 
 @app.delete("/tasks{task_id}" , status_code=status.HTTP_204_NO_CONTENT, tags=["Tasks"])
 def delete_task(task_id:int):
-  conn = get_db_connection()
-  cursor = conn.cursor()
+  with get_db_connection() as conn:
+      with conn.cursor() as cursor:
+          cursor.execute("DELETE FROM tasks WHERE id = %s RETURNING id;", (task_id,))
+
+          deleted_task = cursor.fetchone()
+
+          if deleted_task is None:
+              raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
 
 
-  cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-  conn.commit()
+          cursor.execute("SELECT COUNT(*) FROM tasks;")
+          count = cursor.fetchone()["count"]
+
+          if count == 0:
+              cursor.executemany(
+                  """
+                  INSERT INTO tasks (title, done)
+                  VALUES (%s, %s);
+                  """,
+                  [
+                      ("Learn Postgres in Docker", True),
+                      ("Environment Variables Setup", True),
+                      ("Containerize FastAPI Stack", False),
+                  ]
+              )
+
+          conn.commit()
+          return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-  rows_affected = cursor.rowcount
-  conn.close()
-
-  if rows_affected == 0:
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
-  return None
