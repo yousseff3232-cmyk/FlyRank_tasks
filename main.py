@@ -1,51 +1,53 @@
-import sqlite3
-from fastapi import FastAPI , HTTPException
+import os
+from itertools import count
+
+import psycopg
+from psycopg.rows import dict_row
+from typing import List
+from fastapi import FastAPI , HTTPException , status, Response
 from pydantic import BaseModel ,Field
-from typing import List , Optional
-from starlette import status
-from starlette.responses import Response
+from dotenv import load_dotenv
 
-app = FastAPI(title= "Task API - SQLite Edition " , description= "A production-grade RESTFul API connected to SQLite" , version="2.0")
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:dev@localhost:5432/tasks")
 
 
-DB_NAME = "tasks.db"
+
+app = FastAPI(title= "Task API - Containerized Postgres Edition " ,description= "A production-grade RESTFul API connected to postgreSQL database in Docker ", version= "3.0" )
 
 
 
 
 def get_db_connection():
 
-    row_factory = sqlite3.Row
-
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
-    return conn
-
+   return psycopg.connect(DATABASE_URL,row_factory=dict_row)
 
 
 
 def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
 
-    cursor.execute(""" CREATE TABLE IF NOT EXISTS tasks(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL , done INTEGER DEFAULT 0 )""")
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+              CREATE TABLE IF NOT EXISTS tasks (
+              id SERIAL PRIMARY KEY,
+              title TEXT NOT NULL,
+              done BOOLEAN NOT NULL DEFAULT False);
+            """)
 
+            cursor.execute("SELECT COUNT(*) FROM tasks;")
+            count = cursor.fetchone()["count"]
 
-    cursor.execute("SELECT COUNT(*) FROM tasks")
-    count = cursor.fetchone()[0]
+            if count ==0:
+                initial_task = [
+                    ("Learning FastAPI fundamentals",True),
+                    ("Build in-Memory CRUD API " ,True),
+                    ("Connect CRUD API to Postgres in Docker" , False)
 
-
-
-
-    if count == 0:
-        initial_task = [
-            ("Learning FastAPI fundamentals",1),
-            ("Build in-Memory CRUD API " ,1),
-            ("Connect CRUD API toSQLite Database",0)
-        ]
-        cursor.executemany("INSERT INTO tasks (title, done) VALUES (?,?)", initial_task)
+                ]
+            cursor.executemany("INSERT INTO tasks (title, done) VALUES (%s,%s);", initial_task)
         conn.commit()
-    conn.close()
 
 @app.on_event("startup")
 def on_startup():
@@ -56,7 +58,7 @@ def on_startup():
 
 class TaskCreate(BaseModel):
   title: str = Field(...,min_length=1,
-  description = "Task title cannot be empty")
+  description = "Task title cannot be empty or blank space")
 
 class TaskUpdate(BaseModel):
     title: str = Field(...,min_length=1, description="Updated task title")
@@ -71,9 +73,9 @@ class TaskResponse(BaseModel):
 
 @app.get("/" , tags=["Metadata"])
 def get_api_root():
-    return {"name" : "SQlite To-Do API" ,
-            "DataBase" : "DB_NAME",
-            "status" : "active"}
+    return {"name" : "PostgreSQL To-Do API" ,
+            "DataBase" : "PostgreSQL",
+            "status" : "Active"}
 
 
 @app.get("/health" , tags=["Metadata"])
