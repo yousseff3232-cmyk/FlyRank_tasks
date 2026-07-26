@@ -1,3 +1,20 @@
+# Env variables (Secrets)
+.env
+
+# Virtual Environment
+.venv/
 venv/
+ENV/
+
+# Byte-compiled / Python cache
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
 tasks.db
+*.sqlite3
+
+# IDE / Editor files
+.idea/
+.vscode/
