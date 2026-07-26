@@ -87,32 +87,24 @@ def health_check():
 
 @app.get("/tasks", response_model= list[TaskResponse], tags=["Tasks"])
 def get_all_tasks():
-  conn = get_db_connection()
-  cursor = conn.cursor()
+   with get_db_connection() as conn:
+       with conn.cursor() as cursor:
+           cursor.execute("SELECT ID , title , done FROM tasks ORDER BY id ASC;")
+           rows = cursor.fetchall()
+           return rows
 
-  cursor.execute("SELECT id , title , done FROM tasks")
-  row = cursor.fetchall()
-  conn.close()
-
-  return [
-      {"id":row["id"], "title":row["title"], "done":bool(row["done"])}
-      for row in row      
-  ]
 
 @app.get("/tasks/{task_id}" , response_model=TaskResponse, tags=["Tasks"])
 def get_single_task(task_id: int):
-  conn = get_db_connection()
-  cursor = conn.cursor()
+   with get_db_connection() as conn:
+       with conn.cursor() as cursor:
+           cursor.execute("SELECT id , title, done FROM tasks WHERE id = %s;", (task_id,))
+           row = cursor.fetchone()
 
-  cursor.execute("SELECT id , title , done FROM tasks WHERE id = ?", (task_id,))
-  row = cursor.fetchone()
-  conn.close()
 
-  if row is None:
-   raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
-
-  return {"id":row["id"], "title":row["title"], "done":bool(row["done"])}
-
+           if row is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Task not found")
+           return row
 
 @app.post("/tasks" , response_model=TaskResponse , status_code=status.HTTP_201_CREATED, tags=["Tasks"])
 def create_new_task(task_in: TaskCreate):
