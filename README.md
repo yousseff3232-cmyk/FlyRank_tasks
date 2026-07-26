@@ -118,3 +118,25 @@ Executed via DB Browser for SQLite to inspect active tasks:
 1. **What the AI did better:** Automatically generated type-hinting decorators and structured connection contexts cleanly.
 2. **What the AI got wrong:** The AI forgot to use explicit `status.HTTP_204_NO_CONTENT` for the `DELETE` endpoint and initially returned a `200 OK` with a JSON payload instead.
 3. **What my prompt forgot:** I forgot to specify handling whitespace-only inputs (`.strip()`), which allowed empty string spaces to pass as valid titles in the AI's version.
+
+---
+
+## 🐳 Docker & PostgreSQL Architecture
+
+### One-Command Stack Startup
+```bash
+cp .env.example .env
+docker compose up --build
+```
+## Key Engineering Features
+Containerized Database: PostgreSQL runs isolated in a Docker container using the official image.
+
+Environment Isolation: Connection secrets managed via .env (git-ignored) and .env.example.
+
+Data Persistence: Named volume (taskdata) preserves task data across container restarts (docker compose down && docker compose up).
+
+RESTful Contract Unchanged: Full CRUD functionality maintained with strict HTTP status codes (200, 201, 204, 400, 404).
+
+## Verification
+
+curl -i http://localhost:8000/tasks
